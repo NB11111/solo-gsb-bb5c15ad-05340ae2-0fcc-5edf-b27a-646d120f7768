@@ -15,10 +15,18 @@ from app.models import (
     HealthResponse,
     IdentifyRequest,
     IdentifyResponse,
+    PanelRequest,
+    PanelResponse,
 )
-from app.validation import DigestValidationError, validate_identify_request, validate_request
+from app.panel import build_panel
+from app.validation import (
+    DigestValidationError,
+    validate_identify_request,
+    validate_panel_request,
+    validate_request,
+)
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 app = FastAPI(
     title="Circular DNA Double-Digest Discrimination Service",
@@ -26,7 +34,8 @@ app = FastAPI(
         "圆形（环状）DNA 双酶切鉴别服务：枚举不同酶对，按圆环相邻切点计算"
         "参考型与变异型的片段长度，按分辨容差聚类条带，并推荐可区分两种样本的酶对；"
         "也可将一次凝胶观测条带与两种样本的预测条带做一对一最小代价匹配，"
-        "判定观测样本为参考型、变异型或无法区分。"
+        "判定观测样本为参考型、变异型或无法区分；还可面向多个变异型，"
+        "精确求解覆盖全部变异型的最小酶对面板。"
     ),
     version=VERSION,
 )
@@ -78,6 +87,17 @@ async def digest_recommend(req: DigestRequest) -> DigestResponse:
 async def digest_identify(req: IdentifyRequest) -> IdentifyResponse:
     validate_identify_request(req)
     return identify(req)
+
+
+@app.post(
+    "/api/v1/digest/panel",
+    response_model=PanelResponse,
+    tags=["digest"],
+    summary="精确求解覆盖全部变异型的最小酶对面板",
+)
+async def digest_panel(req: PanelRequest) -> PanelResponse:
+    validate_panel_request(req)
+    return build_panel(req)
 
 
 if __name__ == "__main__":

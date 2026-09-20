@@ -1,0 +1,39 @@
+{
+  "plasmid_length": 1000,
+  "min_visible_fragment": 50,
+  "band_resolution_tolerance": 20,
+  "enzymes": [
+    {
+      "name": "EcoRI",
+      "reference_sites": [100, 600],
+      "variant_sites": {
+        "v1": [100, 600],
+        "v2": [100, 600]
+      }
+    },
+    {
+      "name": "BamHI",
+      "reference_sites": [300],
+      "variant_sites": {
+        "v1": [300, 850],
+        "v2": [300]
+      }
+    },
+    {
+      "name": "HindIII",
+      "reference_sites": [300],
+      "variant_sites": {
+        "v1": [300],
+        "v2": [300, 850]
+      }
+    },
+    {
+      "name": "XhoI",
+      "reference_sites": [300],
+      "variant_sites": {
+        "v1": [300, 850, 900],
+        "v2": [300]
+      }
+    }
+  ]
+}

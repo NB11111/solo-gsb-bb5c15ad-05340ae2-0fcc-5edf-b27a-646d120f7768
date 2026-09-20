@@ -167,3 +167,64 @@ class IdentifyResponse(BaseModel):
     samples: dict[SampleName, SampleMatchOut]
     verdict: Literal["reference", "variant", "ambiguous"]
     verdict_reason: str = Field(description="中文判定依据说明")
+
+
+# ---------------------------------------------------------------- 面板（panel）模型
+
+class PanelEnzymeInput(BaseModel):
+    name: str = Field(..., min_length=1, description="酶名称，如 EcoRI")
+    reference_sites: list[int] = Field(
+        default_factory=list, description="参考型上该酶的候选切点位置（bp，0-based）"
+    )
+    variant_sites: dict[str, list[int]] = Field(
+        default_factory=dict,
+        description="按变异名映射的候选切点：变异名 -> 该变异型上该酶的切点列表（bp，0-based）；"
+                    "某变异未列出时按该酶在该变异上无切点处理",
+    )
+
+
+class PanelRequest(BaseModel):
+    plasmid_length: int = Field(..., gt=0, description="环状质粒总长度（bp）")
+    min_visible_fragment: int = Field(
+        ..., ge=0, description="最小可见片段长度（bp），短于此值的片段不参与条带聚类"
+    )
+    band_resolution_tolerance: int = Field(
+        ..., ge=0, description="条带分辨容差（bp），长度差不超过该值的相邻片段聚为同一条带"
+    )
+    enzymes: list[PanelEnzymeInput] = Field(..., min_length=2, description="参与枚举的酶，至少 2 种")
+
+
+class PanelPairOut(BaseModel):
+    enzyme_pair: list[str]
+    pair_key: str
+    covers_variants: list[str] = Field(description="该酶对可与参考型区分的变异名，按字典序升序")
+    distinguishable_band_count: int = Field(
+        description="该酶对在其覆盖的全部变异上的可区分条带总数"
+    )
+
+
+class PanelVariantCoverageOut(BaseModel):
+    variant: str = Field(description="变异名")
+    enzyme_pair: list[str] = Field(description="用于区分该变异的选中酶对")
+    pair_key: str
+    distinguishable_band_count: int = Field(description="该酶对区分此变异的可区分条带数")
+    differences: list[DifferenceOut] = Field(
+        description="该变异与参考型的逐条带差异依据（结构与推荐接口 differences 相同）"
+    )
+
+
+class PanelResponse(BaseModel):
+    plasmid_length: int
+    min_visible_fragment: int
+    band_resolution_tolerance: int
+    variants: list[str] = Field(description="请求中出现的全部变异名，按字典序升序")
+    total_enzyme_pairs: int
+    selected_pairs: list[PanelPairOut] = Field(
+        description="覆盖全部变异的最小酶对面板（按 pair_key 升序）；存在未覆盖变异时为空"
+    )
+    variant_coverage: list[PanelVariantCoverageOut] = Field(
+        description="逐变异的差异条带依据（按变异名字典序）；存在未覆盖变异时为空（不返回部分面板）"
+    )
+    uncovered_variants: list[str] = Field(
+        description="任何酶对都无法与参考型区分的变异名；非空时不返回部分面板"
+    )
