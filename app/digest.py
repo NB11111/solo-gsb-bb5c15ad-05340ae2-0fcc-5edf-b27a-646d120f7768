@@ -159,7 +159,7 @@ def build_differences(bands: list[BandOut]) -> list[DifferenceOut]:
 
 # --------------------------------------------------------------- 酶对枚举
 
-def _pair_key(a: str, b: str) -> tuple[list[str], str]:
+def pair_key(a: str, b: str) -> tuple[list[str], str]:
     pair = sorted((a, b))
     return pair, f"{pair[0]}+{pair[1]}"
 
@@ -179,7 +179,7 @@ def recommend(req: DigestRequest) -> DigestResponse:
 
     names = [enzyme.name for enzyme in req.enzymes]
     for a, b in combinations(names, 2):
-        pair, key = _pair_key(a, b)
+        pair, key = pair_key(a, b)
         samples = {
             "reference": digest_sample(
                 site_map, a, b, "reference",

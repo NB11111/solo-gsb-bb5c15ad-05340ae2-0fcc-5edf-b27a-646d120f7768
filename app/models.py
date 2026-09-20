@@ -167,3 +167,57 @@ class IdentifyResponse(BaseModel):
     samples: dict[SampleName, SampleMatchOut]
     verdict: Literal["reference", "variant", "ambiguous"]
     verdict_reason: str = Field(description="中文判定依据说明")
+
+
+# ---------------------------------------------------------------- 面板（panel）模型
+
+class PanelEnzymeInput(BaseModel):
+    name: str = Field(..., min_length=1, description="酶名称，如 EcoRI")
+    reference_sites: list[int] = Field(
+        default_factory=list, description="参考型上该酶的候选切点位置（bp，0-based）"
+    )
+    variant_sites: dict[str, list[int]] = Field(
+        default_factory=dict,
+        description="按变异名映射的候选切点：变异名 -> 该变异型上的切点位置列表（bp，0-based）",
+    )
+
+
+class PanelRequest(BaseModel):
+    plasmid_length: int = Field(..., gt=0, description="环状质粒总长度（bp）")
+    min_visible_fragment: int = Field(
+        ..., ge=0, description="最小可见片段长度（bp），短于此值的片段不参与条带聚类"
+    )
+    band_resolution_tolerance: int = Field(
+        ..., ge=0, description="条带分辨容差（bp），长度差不超过该值的相邻片段聚为同一条带"
+    )
+    enzymes: list[PanelEnzymeInput] = Field(..., min_length=2, description="参与枚举的酶，至少 2 种")
+
+
+class PanelVariantCoverageOut(BaseModel):
+    variant: str = Field(description="变异名")
+    distinguishable_band_count: int = Field(description="该酶对在此变异型上的可区分条带数")
+    differences: list[DifferenceOut] = Field(description="逐条差异条带依据（与推荐接口同结构）")
+
+
+class PanelSelectedPairOut(BaseModel):
+    enzyme_pair: list[str]
+    pair_key: str
+    covered_variants: list[str] = Field(description="该酶对覆盖的变异名，按字典序")
+    distinguishable_band_count: int = Field(description="该酶对在全部变异型上的可区分条带总数")
+    coverages: list[PanelVariantCoverageOut] = Field(description="逐变异型的差异条带依据")
+
+
+class PanelResponse(BaseModel):
+    plasmid_length: int
+    min_visible_fragment: int
+    band_resolution_tolerance: int
+    variant_count: int = Field(description="请求中全部变异型的数量")
+    total_enzyme_pairs: int
+    selected_pairs: list[PanelSelectedPairOut] = Field(
+        description="最小面板中的酶对，按 pair_key 字典序；存在未覆盖变异型时为空（不返回部分面板）"
+    )
+    covered_variants: list[str] = Field(description="面板覆盖的变异名；未给出面板时为空")
+    uncovered_variants: list[str] = Field(
+        description="无任何可用酶对覆盖的变异名；非空时不返回部分面板"
+    )
+    total_distinguishable_bands: int = Field(description="面板全部酶对的可区分条带总数")

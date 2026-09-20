@@ -14,5 +14,8 @@ class Settings:
     # identify 接口每个条带列表允许的最大条带数，控制匹配 DP 的规模
     MAX_BANDS: int = int(os.getenv("MAX_BANDS", "512"))
 
+    # panel 接口允许的最大变异型数量：最小面板为精确集合覆盖，规模随变异数指数增长
+    MAX_VARIANTS: int = int(os.getenv("MAX_VARIANTS", "16"))
+
 
 settings = Settings()
